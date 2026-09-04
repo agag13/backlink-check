@@ -132,6 +132,43 @@ After the gates, enrich the **unique domains** of all live URLs (dedupe first �
 4. In the run summary, flag links built on **low-authority domains (OPR ≤ 2)**
    — info only, never a row verdict.
 
+## Link quality guard (toxic check + disavow)
+
+Runs on the domains of SUCCESS links, using data already collected (no new
+paid APIs):
+
+1. **Toxic signals → `Toxic` column in the `Domains` tab** (RED / AMBER / OK):
+   - **RED**: domain itself is **deindexed** (`site:<domain>` via SerpApi → 0
+     organic results — Google ne domain ko nikal diya hai) — strongest toxic
+     signal; or OPR = 0 combined with a link-network pattern.
+   - **AMBER**: OPR ≤ 1; or the domain matches an obvious **link-network
+     template** (many domains sharing an identical URL structure, e.g. the
+     `/NNN/posts/3/24/…` classified network); or the page carries 100+
+     outbound links.
+   - Everything else OK. Signals are info + flags — a row's verdict never
+     changes because of toxicity.
+2. **Reporting**: RED domains (and the client links sitting on them) go into
+   the run summary and the central sheet's `Issues` tab with action
+   "is domain par kaam band karo — disavow candidate".
+3. **Disavow file (only on manager/Ankush confirmation — never automatic)**:
+   generate Google-format lines (`domain:example.com`, one per line) for the
+   approved RED list, save as `disavow-YYYY-MM-DD.txt`, and link it in the
+   run summary. The skill NEVER submits anything to Search Console itself —
+   uploading the file is the manager's manual step.
+
+## Citation coverage (local-SEO clients)
+
+For business-listing/citation clients, compute a **coverage %** against the
+authoritative-directory checklist in `references/citation-directories.md`
+(Tier 1+2 for everyone, plus the client's own tier — medical/education):
+
+- Coverage = distinct applicable directories with a SUCCESS listing ÷
+  applicable total. Report per client in the run summary and in the QA Run
+  Log Notes column.
+- Missing **Tier-1** directories are the highest-value gaps — surface them as
+  suggestions for the `backlink-assembly-line` (Skill D) queue rather than as
+  validator issues.
+
 ## Verdict taxonomy
 
 | Category | Verdict | Meaning |
