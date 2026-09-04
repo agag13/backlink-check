@@ -68,8 +68,17 @@ Global: Composio googlesheets account `googlesheets_eyah-myron` (ankush@fameninj
    `references/content-checklists.md`. Use `snippet`/`word_count`/`images`
    first; fetch the full page when the snippet is not enough. Below
    threshold → `CONTENT_INCOMPLETE` with the score in Reason.
-6. **Listing NAP (Gate 4)** — if Activity Type is a business listing, verify
-   the business address appears in the page content → else `ADDRESS_MISSING`.
+6. **Listing NAP (Gate 4)** — if Activity Type is a business listing / local
+   citation, verify Name-Address-Phone against the **registry ground truth**
+   (`Target listing URL` tab — canonical name, address, phone per client;
+   Ankush verifies these once against the GMB, the skill never guesses NAP):
+   - **Name**: business/doctor name present (minor spacing/case ok)
+   - **Phone**: compare digits-only (strip +91/spaces/dashes)
+   - **Address**: fuzzy — PIN code present AND at least 2 street/area tokens
+     match (e.g. "Imperial Plaza" + "Aligarh"); full exact match not required
+   - Any of the three missing → `ADDRESS_MISSING` with which field(s) in
+     Reason (e.g. "phone + PIN missing"). Registry row incomplete →
+     `CONFIG_MISSING`, ask to fill the registry first.
 7. **Index check** — for rows that passed Gates 1–2, run
    `SERPAPI_GOOGLE_LIGHT_SEARCH` via Composio (connected account
    `serpapi_moony-chaja`) with `q: "site:<live URL>"`. Organic result whose
@@ -103,6 +112,25 @@ Global: Composio googlesheets account `googlesheets_eyah-myron` (ankush@fameninj
     Issues tab dekho aur theek karwao" with the top counts. If a Telegram bot
     token + chat_id or a Google Chat webhook is configured, POST the same
     summary there (plain HTTPS call); otherwise skip silently.
+
+## Domain metrics enrichment (DA/DR — free-first)
+
+After the gates, enrich the **unique domains** of all live URLs (dedupe first —
+~345 rows ≈ ~150 domains) and refresh at most monthly per domain:
+
+1. **Primary (FREE): OpenPageRank API** (domcop.com/openpagerank) — authority
+   score 0–10, **100 domains per request, 30,000/month free, 60 req/min**.
+   Needs a free API key → env var `OPR_API_KEY` (Ankush signs up once, no
+   card). Endpoint: `GET https://openpagerank.com/api/v1.0/getPageRank?domains[]=...`
+   with header `API-OPR: $OPR_API_KEY`.
+2. **Fallback / deep (paid, cheap): Apify** `maximedupre/ahrefs-free-website-stats-scraper`
+   — DR + organic traffic + linking sites at ~$0.0018/domain. Use only for
+   domains where OPR is unavailable or when DR/traffic specifically needed.
+3. **Store** in the central results spreadsheet, tab **`Domains`**: Domain ·
+   OPR Score · DR · Traffic · Last Checked. Before fetching, look the domain
+   up here — re-fetch only if Last Checked > 30 days.
+4. In the run summary, flag links built on **low-authority domains (OPR ≤ 2)**
+   — info only, never a row verdict.
 
 ## Verdict taxonomy
 
